@@ -1,0 +1,120 @@
+﻿<h1>Chat</h1>
+
+<div class="container">
+    <div class="row">&nbsp;</div>
+    <div class="row">
+        <div class="col-6">&nbsp;</div>
+        <div class="col-6">
+            @*User..........<input type="text" id="userInput" />
+                <br />*@
+            Message...<input type="text" id="messageInput" />
+            <input type="button" id="sendButton" value="Send Message" />
+            <br />
+            <h2>Online User</h2>
+            <ul id="user_list"></ul>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <hr />
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-6">&nbsp;</div>
+        <div class="col-6">
+            <ul id="messagesList"></ul>
+        </div>
+    </div>
+</div>
+
+
+<div class="card-header msg_head">
+    <div class="d-flex bd-highlight">
+        <div class="user_info">
+            <span>Chat with : <span id="chat-with-id"></span></span>
+        </div>
+    </div>
+</div>
+<div class="card-body msg_card_body">
+    <ul>
+        <li id="messageListId"></li>
+    </ul>
+    @*<div id="receivedMessageId"></div>
+        <div id="ownMessageId"></div>*@
+</div>
+@*<script src="~/lib/jquery/dist/jquery.js"></script>
+    <script src="~/lib/signalr/dist/browser/signalr.js"></script>*@
+<link href="../../css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+<script src="../../js/bootstrap.min.js"></script>
+<script src="../../js/jquery.min.js"></script>
+<script src="../../js/signalr.min.js"></script>
+
+<script>
+    "use strict";
+
+    var username = prompt('Enter your name:', '');
+    //$('#displayname').val(username);
+
+    var connection = new signalR.HubConnectionBuilder().withUrl("http://localhost:20862/Index?name=" + username).build();
+
+    //Disable send button until connection is established
+    document.getElementById("sendButton").disabled = true;
+
+    //connection.on("ReceiveMessage", function (message, user) {
+    //    alert(message);
+    //    var msg = message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    //    var encodedMsg = user + " says " + msg;
+    //    var li = document.createElement("li");
+    //    li.textContent = encodedMsg;
+    //    document.getElementById("messagesList").appendChild(li);
+    //});
+    connection.on("OwnMessage", (message) => {
+        console.log('ownmessage');
+        console.log(message);
+        $('#messageListId').append('<li><div class="d-flex justify-content-end mb-4">' +
+            '<div class= ""msg_cotainer">' + message + '<span class= "msg_time_send" ></span></div >' +
+            '<div class="img_cont_msg">' +
+            '<img src="../../img/user.png" alt="find and solve" class="rounded-circle user_img_msg"> </div> </div></li>')
+    });
+    connection.on("ReceiveMessage", (message, senderId) => {
+        alert();
+        $('#chat-with-id').text(senderId);
+        $('#messageListId').append('<li><div class="d-flex justify-content-start mb-4">' +
+            '<div class="img_cont_msg">' +
+            '<img src="../../img/user.png" alt="find and solve" class="rounded-circle user_img_msg"> </div> ' +
+            '<div class= ""msg_cotainer">' + message + '<span class= "msg_time_send" ></span></div >' +
+            '</div ></li>')
+    });
+    //display users
+    var receiverId = function (id) {
+        $('#chat-with-id').text(id);
+    }
+    connection.on("UpdateUserList", function (userc) {
+        console.log(userc);
+        $('#user_list').empty();
+
+        $.map(JSON.parse(userc), function (val, k) {
+            console.log('Key: ' + k + ' Value: ' + val + ';');
+            var userinfo = "User Name: <b>" + k + "</b>, Connections: " + val;
+
+            $('#user_list').append('<li onclick=receiverId(' + "'" + k + "'" + ')>' + userinfo + '</li>');
+        })
+    });
+
+    connection.start().then(function () {
+        document.getElementById("sendButton").disabled = false;
+    }).catch(function (err) {
+        return console.error(err.toString());
+    });
+
+    document.getElementById("sendButton").addEventListener("click", function (event) {
+        //var user = document.getElementById("userInput").value;
+        //var user = username;
+        var user = $('#chat-with-id').text();
+        var message = document.getElementById("messageInput").value;
+        connection.invoke("SendMessage", message, user).catch(function (err) {
+            return console.error(err.toString());
+        });
+        event.preventDefault();
+    });
+</script>
